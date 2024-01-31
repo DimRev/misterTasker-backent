@@ -10,6 +10,7 @@ const CRUD = {
 }
 
 const PREFORM_TASK = 'performTask'
+const TOGGLE_WORKER = 'toggleWorker'
 
 async function handleRequest(action, req, res) {
   try {
@@ -35,11 +36,11 @@ export async function getTask(req, res) {
 }
 
 export async function addTask(req, res) {
-  await handleRequest(CRUD.ADD, req.body.task, res)
+  await handleRequest(CRUD.ADD, req.body, res)
 }
 
 export async function updateTask(req, res) {
-  await handleRequest(CRUD.UPDATE, req.body.task, res)
+  await handleRequest(CRUD.UPDATE, req.body, res)
 }
 
 export async function removeTask(req, res) {
@@ -47,5 +48,9 @@ export async function removeTask(req, res) {
 }
 
 export async function executeTask(req, res) {
-  await handleRequest(PREFORM_TASK, req.body.task, res)
+  await handleRequest(PREFORM_TASK, req.body, res)
+}
+
+export async function toggleWorker(req, res) {
+  await handleRequest(TOGGLE_WORKER, req.body, res)
 }

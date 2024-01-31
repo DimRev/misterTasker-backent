@@ -4,6 +4,8 @@ import { externalService } from '../../services/external.service.js'
 
 const COLLECTION_NAME = 'task'
 
+let isWorkerOn = false
+
 export const taskService = {
   query,
   getById,
@@ -11,6 +13,8 @@ export const taskService = {
   update,
   remove,
   performTask,
+  toggleWorker,
+  getNextTask,
 }
 
 async function query() {
@@ -74,12 +78,7 @@ async function remove(taskId) {
   }
 }
 
-async function getCollection() {
-  return await dbService.getCollection(COLLECTION_NAME)
-}
-
 async function performTask(task) {
-  console.log(task)
   let executedTask
   try {
     // TODO: update task status to running and save to DB
@@ -107,5 +106,53 @@ async function performTask(task) {
     executedTask.lastTriedAt = Date.now()
     await update(executedTask)
     return executedTask
+  }
+}
+
+async function toggleWorker() {
+  isWorkerOn = !isWorkerOn
+  if (isWorkerOn) runWorker()
+  return isWorkerOn
+}
+
+async function getNextTask() {
+  try {
+    const collection = await getCollection()
+    const sortedAndFilteredCollection = await collection
+      .find({ triesCount: { $lte: 5 }, status: 'failed' })
+      .sort({ importance: -1 })
+      .toArray()
+    return sortedAndFilteredCollection[0]
+  } catch (err) {}
+}
+
+async function getCollection() {
+  return await dbService.getCollection(COLLECTION_NAME)
+}
+
+async function runWorker() {
+  console.log('isWorkerOn', isWorkerOn)
+  // The isWorkerOn is toggled by the button: "Start/Stop Task Worker"
+  if (!isWorkerOn) return
+  console.log('working worker')
+  var delay = 5000
+  try {
+    const task = await taskService.getNextTask()
+    console.log('working on: ', task.title)
+    if (task) {
+      try {
+        await taskService.performTask(task)
+      } catch (err) {
+        console.log(`Failed Task`, err)
+      } finally {
+        delay = 1
+      }
+    } else {
+      console.log('Snoozing... no tasks to perform')
+    }
+  } catch (err) {
+    console.log(`Failed getting next task to execute`, err)
+  } finally {
+    setTimeout(runWorker, delay)
   }
 }
