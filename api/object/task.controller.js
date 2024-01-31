@@ -9,6 +9,8 @@ const CRUD = {
   REMOVE: 'remove',
 }
 
+const PREFORM_TASK = 'performTask'
+
 async function handleRequest(action, req, res) {
   try {
     loggerService.debug(`Handling ${action} request`)
@@ -42,4 +44,8 @@ export async function updateTask(req, res) {
 
 export async function removeTask(req, res) {
   await handleRequest(CRUD.REMOVE, req.params.taskId, res)
+}
+
+export async function executeTask(req, res) {
+  await handleRequest(PREFORM_TASK, req.body.task, res)
 }
