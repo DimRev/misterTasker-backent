@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb'
 import { dbService } from '../../services/db.service.js'
+import { externalService } from '../../services/external.service.js'
 
 const COLLECTION_NAME = 'task'
 
@@ -9,6 +10,7 @@ export const taskService = {
   add,
   update,
   remove,
+  performTask,
 }
 
 async function query() {
@@ -74,4 +76,36 @@ async function remove(taskId) {
 
 async function getCollection() {
   return await dbService.getCollection(COLLECTION_NAME)
+}
+
+async function performTask(task) {
+  console.log(task)
+  let executedTask
+  try {
+    // TODO: update task status to running and save to DB
+    task.status = 'running'
+    await update(task)
+    // TODO: execute the task using: externalService.execute
+    await externalService.execute(task)
+    // TODO: update task for success (doneAt, status)
+    executedTask = {
+      ...task,
+      status: 'success',
+      doneAt: Date.now(),
+    }
+  } catch (err) {
+    // TODO: update task for error: status, errors
+    executedTask = {
+      ...task,
+      status: 'failed',
+      errors: [...task.errors, err.message || err],
+    }
+  } finally {
+    // TODO: update task lastTried, triesCount and save to DB
+    if (!task) throw new Error(`No task on request body`)
+    executedTask.triesCount++
+    executedTask.lastTriedAt = Date.now()
+    await update(executedTask)
+    return executedTask
+  }
 }
