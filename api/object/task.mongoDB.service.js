@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb'
 import { dbService } from '../../services/db.service.js'
 import { externalService } from '../../services/external.service.js'
+import { socketService } from '../../services/socket.service.js'
 
 const COLLECTION_NAME = 'task'
 
@@ -141,14 +142,18 @@ async function runWorker() {
     console.log('working on: ', task.title)
     if (task) {
       try {
+        socketService.emitTo({ type: 'worker-started-task', data: task })
         await taskService.performTask(task)
+        socketService.emitTo({ type: 'worker-succeeded-task', data: task })
       } catch (err) {
         console.log(`Failed Task`, err)
+        socketService.emitTo({ type: 'worker-failed-task', data: task })
       } finally {
         delay = 1
       }
     } else {
       console.log('Snoozing... no tasks to perform')
+      socketService.emitTo({ type: 'worker-snoozing' })
     }
   } catch (err) {
     console.log(`Failed getting next task to execute`, err)

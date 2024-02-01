@@ -2,6 +2,7 @@ import express from 'express'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import path from 'path'
+import http from 'http'
 import { config } from 'dotenv'
 
 config()
@@ -10,6 +11,7 @@ import { loggerService } from './services/logger.service.js'
 loggerService.info('server.js loaded...')
 
 const app = express()
+const server = http.createServer(app)
 
 //Express App Config
 app.use(cookieParser())
@@ -34,6 +36,9 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 import { taskRoutes } from './api/object/task.routes.js'
+import { setupSocketAPI } from './services/socket.service.js'
+
+setupSocketAPI(server)
 
 app.use('/api/task', taskRoutes)
 
@@ -43,6 +48,6 @@ app.get('/**', (req, res) => {
   res.sendFile(path.resolve('public/index.html'))
 })
 
-app.listen(port, () => {
+server.listen(port, () => {
   loggerService.info('Server is running on port: ' + port)
 })
